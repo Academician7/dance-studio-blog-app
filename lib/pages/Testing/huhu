@@ -1,0 +1,203 @@
+import 'package:basic_pages/pages/Feeds.dart';
+import 'package:basic_pages/pages/Networking/SignupHandler.dart';
+import 'package:flutter/material.dart';
+import 'Networking/LoginHandler.dart';
+
+class Login extends StatefulWidget {
+  Login({Key key}) : super(key: key);
+
+  @override
+  _LoginState createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
+  bool vis = true;
+
+  void toggle() {
+    setState(() {
+      vis = !vis;
+    });
+  }
+
+  bool validate = false;
+
+  NetworkHandler networkHandler = NetworkHandler();
+
+  LoginHandler loginHandler = LoginHandler();
+
+  final _globalkey = GlobalKey<FormState>();
+
+  TextEditingController _studentIDController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+
+  dynamic globaldata;
+
+  bool authenticated = false;
+
+  String profilebuddyname;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                  height: 150,
+                  width: 150,
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                      border: Border.all(color: Colors.pink[600]),
+                      image: DecorationImage(
+                          image: NetworkImage(
+                              "https://i.pinimg.com/originals/cc/4c/ec/cc4cec2d63f978b4f7e5dbfc59cc85b9.png"),
+                          fit: BoxFit.cover))),
+              SizedBox(
+                height: 60,
+              ),
+              usernameTextField("Student Name"),
+              SizedBox(height: 20),
+              passwordTextField("Password"),
+              SizedBox(
+                height: 60,
+              ),
+              InkWell(
+                onTap: () async {
+                  
+                  if (_globalkey.currentState.validate()) {
+                    Map<String, String> data = {
+                      "username": _studentIDController.text,
+                      "password": _passwordController.text
+                    };
+                    print(data);
+                    await loginHandler.post("/user/login", data);
+                    globaldata = data;
+                    print("This is to print global data $globaldata");
+
+                    FocusScopeNode currentFocus = FocusScope.of(context);
+                    if (!currentFocus.hasPrimaryFocus) {
+                      currentFocus.unfocus();
+                      if (loginHandler.messege == "success") {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (BuildContext context) => Feeds()));
+                      } else {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Wrong Data"),
+                              );
+                            });
+                      }
+                    }
+                  }
+                },
+                child: Container(
+                  height: 60,
+                  width: 250,
+                  decoration: BoxDecoration(
+                      color: Colors.pink,
+                      borderRadius: BorderRadius.horizontal(
+                          left: Radius.circular(50),
+                          right: Radius.circular(50)),
+                      border: Border.all(color: Colors.black, width: 3)),
+                  child: Center(
+                    child: Text(
+                      "SIGN IN",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 32,
+                          color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  passUserData() async {
+    await networkHandler.get("/user/${globaldata["username"]}");
+    profilebuddyname = await globaldata['username'];
+    print("This is just to see grobaldata body $globaldata");
+    var x = await networkHandler.get("/user/${globaldata["username"]}");
+    var profileBuddyAddress = await x["address"];
+    //    var saymyname = profilebuddyname;
+    //  print("This is the print data value $profilebuddyname");
+    print(profilebuddyname);
+    print(profileBuddyAddress);
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) => Feeds()));
+  }
+
+  Widget usernameTextField(String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 50.0),
+      child: Column(children: [
+        Text(
+          "$label",
+          style: TextStyle(color: Colors.black),
+        ),
+        TextFormField(
+          validator: (value) {
+            if (value.isEmpty) {
+              return "Student ID cant be empty";
+            } else {
+              return null;
+            }
+          },
+          controller: _studentIDController,
+          decoration: InputDecoration(
+              //        errorText: validate ? null : errorText,
+              focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+            color: Colors.black,
+            width: 2,
+          ))),
+        )
+      ]),
+    );
+  }
+
+  Widget passwordTextField(String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 50.0),
+      child: Column(children: [
+        Text(
+          "$label",
+          style: TextStyle(color: Colors.black),
+        ),
+        TextFormField(
+          controller: _passwordController,
+          validator: (value) {
+            if (value.isEmpty) return "Password cant be empty";
+            if (value.length < 2)
+              return "Password length must be of 8 or more letter";
+            return null;
+          },
+          obscureText: vis,
+          decoration: InputDecoration(
+              suffixIcon: IconButton(
+                icon: Icon(Icons.visibility_off),
+                onPressed: toggle,
+              ),
+              helperText: "Password should more than 8 letter",
+              helperStyle: TextStyle(fontSize: 16),
+              focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                color: Colors.black,
+                width: 2,
+              ))),
+        )
+      ]),
+    );
+  }
+}
