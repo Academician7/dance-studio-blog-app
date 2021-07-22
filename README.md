@@ -1,6 +1,6 @@
 # blog_app
 
-A new Flutter project.
+This is a blog app for learning api data fetching.
 
 ## Getting Started
 
